@@ -1,0 +1,36 @@
+services:
+  db:
+    build:
+      context: ./db
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./db/dump:/data/db
+    restart: always
+
+  website:
+    build:
+      context: ./website
+    ports:
+      - "8000:8000"
+    restart: always
+    depends_on:
+      - db
+
+  chat:
+    build:
+      context: ./chat
+    ports:
+      - "8001:8000"
+    restart: always
+
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - website
+      - chat
+    restart: always
