@@ -38,7 +38,14 @@ $ gitclone https://github.com/w1ad3k/Lab1_Zinchenko_V_A/
 ```sh
 python3 main.py
 ```
-
+### Запуск через DOCKER
+1. Перейдите на официальный сайт Docker, скачайте и установите нужную версию для вашей системы (в основном x86_64, в зависимости от архитектуры)
+    Ссылка: https://docs.docker.com/desktop/install/windows-install/
+2. Откройте папку с проектом в VS Code, а также запустите Docker
+3. В VS Code откройте терминал и впишите команду:
+```sh
+docker-compose up --build
+```
 ## To do
 - [x] Добавить крутое README
 
