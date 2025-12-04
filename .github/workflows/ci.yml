@@ -9,15 +9,15 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-steps:
-  - uses: actions/checkout@v3
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-version '3.11'
-  - name: Install dependencies
-    run: pip install -r requirements.txt
-  - name: Run Flake8
-    run: flake8 .
-  - name: RUn Pytest
-    run: pytest -q 
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with: 
+          python-version: "3.11" 
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Flake8
+        run: flake8 .
+      - name: RUn Pytest
+        run: pytest -q 
