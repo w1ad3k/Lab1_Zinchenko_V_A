@@ -70,7 +70,10 @@ async def register_page(request: Request):
 async def register_user(request: Request, username: str = Form(...), password: str = Form(...)):
     existing_user = await db.find_one(UserProfile, UserProfile.username == username)
     if existing_user:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Username already exists."})
+        return templates.TemplateResponse(
+            "register.html", 
+            {"request": request, "error": "Username already exists."}
+        )
 
     user = UserProfile(username=username, encrypted_password=encrypt_password(password))
     await db.save(user)
