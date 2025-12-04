@@ -2,6 +2,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from jose import JWTError, jwt
 from typing import Dict, List
 import logging
+def test_sum():
+    assert 1+1 ==2
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
