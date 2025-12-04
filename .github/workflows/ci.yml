@@ -20,6 +20,8 @@ jobs:
           python - m pip install -- upgrade pip setuptools wheel
       - name: Install black
         run: pip install black
+      - name: Auto-format code
+        run: black .
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run Flake8
