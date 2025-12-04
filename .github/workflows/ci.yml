@@ -28,7 +28,7 @@ jobs:
       - name: RUn Pytest
         run: pytest -q 
       - name: Upload summary repot
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: summary
           path: summary.md
