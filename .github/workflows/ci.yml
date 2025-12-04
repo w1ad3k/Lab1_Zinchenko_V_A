@@ -27,8 +27,12 @@ jobs:
       
       - name: RUn Pytest
         run: pytest -q 
-      - name: Upload summary repot
+      - name: Generate summary
+        run: |
+          mkdir -p reports
+          echo "#Report" > reports/summary.md
+      - name: Upload artifact  
         uses: actions/upload-artifact@v4
         with:
           name: summary
-          path: summary.md
+          path: reports/summary.md
