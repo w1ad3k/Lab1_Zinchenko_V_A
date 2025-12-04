@@ -25,9 +25,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(SessionMiddleware, secret_key=APP_CONFIG["SECRET_KEY"])
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=APP_CONFIG["SECRET_KEY"]
+)
 
-password_manager = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_manager = CryptContext(
+    schemes=["bcrypt"], 
+    deprecated="auto"
+)
 
 # Подключение к MongoDB
 dbClient = AsyncIOMotorClient(APP_CONFIG["DATABASE_URL"])
@@ -45,50 +51,100 @@ class Chat(Model):
 def encrypt_password(password: str) -> str:
     return password_manager.hash(password)
 
-def check_password(plain_password: str, encrypted_password: str) -> bool:
-    return password_manager.verify(plain_password, encrypted_password)
+def check_password(
+    plain_password: str, 
+    encrypted_password: str
+) -> bool:
+    return password_manager.verify(
+        plain_password, 
+        encrypted_password
+    )
 
 # Генерация токена
 def generate_token(user_data: dict) -> str:
     payload = user_data.copy()
-    return jwt.encode(payload, APP_CONFIG["SECRET_KEY"], algorithm=APP_CONFIG["ALGORITHM"])
+    return jwt.encode(
+        payload, 
+        APP_CONFIG["SECRET_KEY"], 
+        algorithm=APP_CONFIG["ALGORITHM"]
+    )
 
 # Инициализация шаблонов
-templates = Jinja2Templates(directory=APP_CONFIG["TEMPLATES_DIR"])
+templates = Jinja2Templates(
+    directory=APP_CONFIG["TEMPLATES_DIR"]
+)
 
 # Маршруты
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     user = request.session.get("username")
-    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+    return templates.TemplateResponse(
+        "index.html", 
+        {"request": request, "user": user}
+    )
 
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(
+        "register.html", 
+        {"request": request}
+    )
 
 @app.post("/register", response_class=HTMLResponse)
-async def register_user(request: Request, username: str = Form(...), password: str = Form(...)):
-    existing_user = await db.find_one(UserProfile, UserProfile.username == username)
+async def register_user(
+    request: Request, 
+    username: str = Form(...), 
+    password: str = Form(...)
+):
+    existing_user = await db.find_one(
+        UserProfile, 
+        UserProfile.username == username
+    )
     if existing_user:
+        context = {
+            "request": request, 
+            "error": "Username already exists."
+        }
         return templates.TemplateResponse(
             "register.html", 
-            {"request": request, "error": "Username already exists."}
+            context
         )
 
-    user = UserProfile(username=username, encrypted_password=encrypt_password(password))
+    user = UserProfile(
+        username=username, 
+        encrypted_password=encrypt_password(password)
+    )
     await db.save(user)
     request.session["username"] = user.username
     return RedirectResponse("/dashboard", status_code=302)
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(
+        "login.html", 
+        {"request": request}
+    )
 
 @app.post("/login", response_class=HTMLResponse)
-async def login_user(request: Request, username: str = Form(...), password: str = Form(...)):
-    user = await db.find_one(UserProfile, UserProfile.username == username)
-    if not user or not check_password(password, user.encrypted_password):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials."})
+async def login_user(
+    request: Request, 
+    username: str = Form(...), 
+    password: str = Form(...)
+):
+    user = await db.find_one(
+        UserProfile, 
+        UserProfile.username == username
+    )
+    if not user or not check_password(
+        password, 
+        user.encrypted_password
+    ):
+        context = {
+            "request": request, 
+            "error": "Invalid credentials."
+        }
+        return templates.TemplateResponse("login.html", context)
+    
     request.session["username"] = user.username
     return RedirectResponse("/dashboard", status_code=302)
 
@@ -103,26 +159,39 @@ async def dashboard(request: Request):
         return RedirectResponse("/login", status_code=302)
     
     user = request.session.get("username")
-    return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
+    return templates.TemplateResponse(
+        "dashboard.html", 
+        {"request": request, "user": user}
+    )
 
 # Маршрут для создания беседы
 @app.get("/create_chat", response_class=HTMLResponse)
 async def create_chat_page(request: Request):
     if not request.session.get("username"):
         return RedirectResponse("/login", status_code=302)
-    return templates.TemplateResponse("create_chat.html", {"request": request})
+    return templates.TemplateResponse(
+        "create_chat.html", 
+        {"request": request}
+    )
 
 @app.post("/create_chat", response_class=HTMLResponse)
-async def create_chat(request: Request, chat_name: str = Form(...)):
+async def create_chat(
+    request: Request, 
+    chat_name: str = Form(...)
+):
     if not request.session.get("username"):
         return RedirectResponse("/login", status_code=302)
 
     if len(chat_name) < 6:
-        return templates.TemplateResponse("create_chat.html", {"request": request, "error": "Название беседы должно содержать минимум 6 символов."})
+        error_msg = "Название беседы должно содержать минимум 6 символов."
+        context = {"request": request, "error": error_msg}
+        return templates.TemplateResponse("create_chat.html", context)
 
     existing_chat = await db.find_one(Chat, Chat.title == chat_name)
     if existing_chat:
-        return templates.TemplateResponse("create_chat.html", {"request": request, "error": "Беседа с таким названием уже существует."})
+        error_msg = "Беседа с таким названием уже существует."
+        context = {"request": request, "error": error_msg}
+        return templates.TemplateResponse("create_chat.html", context)
 
     new_chat = Chat(title=chat_name)
     await db.save(new_chat)
@@ -136,19 +205,32 @@ async def search_chats_page(request: Request):
 
     chats = await db.find(Chat)
     print(chats)
-    return templates.TemplateResponse("search_chats.html", {"request": request, "chats": chats})
+    return templates.TemplateResponse(
+        "search_chats.html", 
+        {"request": request, "chats": chats}
+    )
 
 @app.post("/search_chats", response_class=HTMLResponse)
-async def search_chats(request: Request, search_query: str = Form(...)):
+async def search_chats(
+    request: Request, 
+    search_query: str = Form(...)
+):
     if not request.session.get("username"):
         return RedirectResponse("/login", status_code=302)
 
     if len(search_query) < 6:
-        return templates.TemplateResponse("search_chats.html", {"request": request, "error": "Запрос должен содержать минимум 6 символов."})
+        error_msg = "Запрос должен содержать минимум 6 символов."
+        context = {"request": request, "error": error_msg}
+        return templates.TemplateResponse("search_chats.html", context)
 
     chats = await db.find(Chat, Chat.title.match(search_query))
     print(chats)
-    return templates.TemplateResponse("search_chats.html", {"request": request, "chats": chats, "query": search_query})
+    context = {
+        "request": request, 
+        "chats": chats, 
+        "query": search_query
+    }
+    return templates.TemplateResponse("search_chats.html", context)
 
 @app.post("/delete_chat/{chat_name}")
 async def delete_chat(chat_name: str, request: Request):
@@ -161,15 +243,23 @@ async def delete_chat(chat_name: str, request: Request):
         await db.delete(chat_to_delete)
         return RedirectResponse("/dashboard", status_code=303)
     else:
-        return templates.TemplateResponse("chat.html", {"request": request, "error": "Беседа не найдена."})
+        context = {"request": request, "error": "Беседа не найдена."}
+        return templates.TemplateResponse("chat.html", context)
 
 @app.get("/chat/{chat_name}", response_class=HTMLResponse)
 async def chat_page(request: Request, chat_name: str):
     if not request.session.get("username"):
         return RedirectResponse("/login", status_code=302)
+    
     user = request.session.get("username")
     token = generate_token({"sub": user})
-    return templates.TemplateResponse("chat.html", {"request": request, "chat_name": chat_name, "user": user, "token": token})
+    context = {
+        "request": request, 
+        "chat_name": chat_name, 
+        "user": user, 
+        "token": token
+    }
+    return templates.TemplateResponse("chat.html", context)
 
 # Запуск приложения
 if __name__ == "__main__":
